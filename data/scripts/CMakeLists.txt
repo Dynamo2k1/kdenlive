@@ -9,6 +9,7 @@ INSTALL(FILES
     checkpackages.py
     otiointerface.py
     checkgpu.py
+    brollmatcher.py
     generate_transition_previews.py
 
 DESTINATION ${KDE_INSTALL_DATADIR}${DATA_INSTALL_PREFIX}/scripts)
