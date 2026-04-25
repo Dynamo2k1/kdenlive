@@ -6,6 +6,7 @@ INSTALL(FILES
     whispertosrt.py
     whisperquery.py
     seamlessquery.py
+    whispercpp_word_timestamps.py
     requirements-whisper.txt
     requirements-seamless.txt
     requirements-cuda118.txt
