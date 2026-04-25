@@ -11,6 +11,13 @@ import sys
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence, Set
 
+SCENE_CHANGE_THRESHOLD = 0.45
+YOLO_CONFIDENCE_THRESHOLD = 0.5
+MAX_SCENE_BONUS = 6
+SCENE_BONUS_DIVISOR = 10.0
+KEYWORD_MATCH_WEIGHT = 1.5
+NO_KEYWORD_MATCH_PENALTY = 0.55
+
 
 def _tokenize(text: str) -> Set[str]:
     return {t for t in re.findall(r"[a-zA-Z0-9]+", text.lower()) if len(t) > 2}
@@ -122,7 +129,7 @@ def _detect_scenes_basic(cv2, capture, sample_seconds: float, max_frames: int, n
         cv2.normalize(hist, hist)
         if last_hist is not None:
             diff = cv2.compareHist(last_hist, hist, cv2.HISTCMP_BHATTACHARYYA)
-            if diff > 0.45:
+            if diff > SCENE_CHANGE_THRESHOLD:
                 scene_changes += 1
         last_hist = hist
         read_frames += 1
@@ -179,7 +186,7 @@ def _detect_objects_yolo(cv2, capture, net, classes: Sequence[str], sample_secon
                 scores = det[5:]
                 cls_id = int(scores.argmax())
                 confidence = float(scores[cls_id])
-                if confidence >= 0.5:
+                if confidence >= YOLO_CONFIDENCE_THRESHOLD:
                     if classes and 0 <= cls_id < len(classes):
                         labels.add(classes[cls_id].lower())
                     else:
@@ -244,10 +251,10 @@ def _rank_clips_for_entry(entry: TranscriptEntry, clips: Sequence[ClipInfo], top
     for clip in clips:
         overlap = sorted(entry.keywords & clip.tags)
         lexical = len(overlap)
-        scene_bonus = min(clip.scenes, 6) / 10.0
-        score = (lexical * 1.5) + scene_bonus + clip.quality
+        scene_bonus = min(clip.scenes, MAX_SCENE_BONUS) / SCENE_BONUS_DIVISOR
+        score = (lexical * KEYWORD_MATCH_WEIGHT) + scene_bonus + clip.quality
         if lexical == 0:
-            score *= 0.55
+            score *= NO_KEYWORD_MATCH_PENALTY
         ranked.append(
             {
                 "path": clip.path,
